@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>J.A.R.V.I.S. — Personal Interface</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<meta name="theme-color" content="#05080d">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23050a0d' width='192' height='192'/><circle cx='96' cy='96' r='68' fill='%234fd8e8' opacity='0.3'/><circle cx='96' cy='96' r='50' fill='none' stroke='%234fd8e8' stroke-width='3'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05080d;
+    --bg-panel:#0a121c;
+    --bg-panel2:#0d1926;
+    --line:rgba(79,216,232,.16);
+    --line-strong:rgba(79,216,232,.32);
+    --cyan:#4fd8e8;
+    --cyan-soft:#8fe9f2;
+    --cyan-dim:#1f4a53;
+    --amber:#ffb454;
+    --red:#ff5f5f;
+    --white:#eaf6fb;
+    --muted:#5b7a8c;
+    --font-disp:'Orbitron',sans-serif;
+    --font-ui:'Rajdhani',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; height:100%; background:var(--bg); color:var(--white);
+    font-family:var(--font-ui); overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  body{
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 12%, rgba(79,216,232,.07), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 100%, rgba(79,216,232,.05), transparent 60%),
+      var(--bg);
+    display:flex; flex-direction:column;
+    height:100vh; height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  body::before{
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(rgba(79,216,232,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,216,232,.035) 1px, transparent 1px);
+    background-size:36px 36px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 45%, black 30%, transparent 78%);
+            mask-image: radial-gradient(ellipse 75% 75% at 50% 45%, black 30%, transparent 78%);
+  }
+
+  header{
+    position:relative; z-index:1;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 26px; border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand .dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); animation:blink 2.4s ease-in-out infinite;}
+  .brand span{ font-family:var(--font-disp); font-weight:700; letter-spacing:.34em; font-size:14px; color:var(--cyan-soft);}
+  .clock-wrap{ text-align:center; }
+  #clock{ font-family:var(--font-mono); font-size:26px; letter-spacing:.06em; color:var(--white); line-height:1;}
+  #dateline{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; color:var(--muted); margin-top:4px;}
+  .status-pill{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--cyan-soft);
+    border:1px solid var(--line-strong); padding:6px 12px; border-radius:20px;
+    display:flex; align-items:center; gap:8px; background:rgba(79,216,232,.04);
+  }
+  .status-pill .ring{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+
+  main{
+    position:relative; z-index:1; flex:1; min-height:0;
+    display:grid; grid-template-columns:230px 1fr 270px; gap:0;
+  }
+  .panel{
+    padding:20px 18px; overflow-y:auto; min-height:0;
+  }
+  .panel.left{ border-right:1px solid var(--line); }
+  .panel.right{ border-left:1px solid var(--line); }
+  .panel h2{
+    font-family:var(--font-disp); font-size:11px; letter-spacing:.24em; color:var(--muted);
+    margin:0 0 16px; font-weight:700;
+  }
+  .panel h2 span{ color:var(--cyan-soft); }
+
+  .sys-row{ margin-bottom:16px; }
+  .sys-row .label{ display:flex; justify-content:space-between; font-size:12px; font-family:var(--font-mono); color:var(--muted); margin-bottom:6px;}
+  .sys-row .label b{ color:var(--cyan-soft); font-weight:500; }
+  .bar{ height:5px; border-radius:3px; background:rgba(79,216,232,.08); overflow:hidden; border:1px solid var(--line);}
+  .bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--cyan-dim),var(--cyan)); border-radius:3px; transition:width .8s ease;}
+  .net-line{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--white);}
+  .net-line .ring{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);flex-shrink:0;}
+  .net-line.off .ring{ background:var(--red); box-shadow:0 0 6px var(--red);}
+  .app-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .app-list li{ display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:11px; color:var(--cyan-soft); cursor:pointer; transition:all .2s; }
+  .app-list li:hover{ background:rgba(79,216,232,.08); border-color:var(--line-strong); }
+  .app-list li .icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+  .app-list li.active{ background:rgba(79,216,232,.15); border-color:var(--cyan); }
+
+  .center{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:22px; padding:14px;
+  }
+  .greeting{ text-align:center; }
+  .greeting .h1{
+    font-family:var(--font-disp); font-weight:700; font-size:22px; letter-spacing:.04em;
+    color:var(--white);
+  }
+  .greeting .h1 em{ font-style:normal; color:var(--cyan); }
+  .greeting .h2{ font-family:var(--font-ui); font-size:13px; color:var(--muted); margin-top:4px; letter-spacing:.03em;}
+
+  .core-wrap{ position:relative; width:260px; height:260px; cursor:pointer; }
+  .core-wrap svg{ width:100%; height:100%; overflow:visible; }
+  .ring{ fill:none; stroke:var(--cyan-dim); transform-origin:130px 130px; }
+  .ring.a{ stroke-width:1; stroke-dasharray:2 10; animation:spin 40s linear infinite; }
+  .ring.b{ stroke-width:1.4; stroke-dasharray:1 3; stroke:var(--line-strong); animation:spin 26s linear infinite reverse; }
+  .ring.c{ stroke-width:2; opacity:.55; animation:spin 60s linear infinite; }
+  .ring.core{ stroke:var(--cyan); stroke-width:2; opacity:.9; }
+  .core-fill{ fill:url(#coreGrad); opacity:.9; }
+  .core-wrap .center-icon{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:6px; pointer-events:none;
+  }
+  .center-icon .mic{ width:26px; height:26px; opacity:.85; }
+  .center-icon .cta{ font-family:var(--font-mono); font-size:10px; letter-spacing:.18em; color:var(--cyan-soft); text-transform:uppercase; opacity:.75;}
+  .core-wrap.listening .ring.core{ stroke:var(--amber); filter:drop-shadow(0 0 10px rgba(255,180,84,.7)); }
+  .core-wrap.listening .center-icon .cta{ color:var(--amber); }
+  .core-wrap.listening .ring.a{ animation-duration:8s; }
+  .core-wrap.listening .ring.b{ animation-duration:6s; }
+  .pulse-ripple{ position:absolute; inset:0; border-radius:50%; border:1px solid var(--amber); opacity:0; }
+  .core-wrap.listening .pulse-ripple{ animation:ripple 1.6s ease-out infinite; }
+
+  .transcript{
+    width:min(560px,88%); min-height:52px; text-align:center;
+    font-family:var(--font-mono); font-size:14px; color:var(--cyan-soft); line-height:1.6;
+    letter-spacing:.01em;
+  }
+  .transcript .you{ color:var(--muted); font-size:12px; display:block; margin-bottom:4px;}
+
+  .module{ margin-bottom:20px; border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--bg-panel2);}
+  .module .m-title{ font-family:var(--font-mono); font-size:10px; letter-spacing:.16em; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;}
+  .module .m-title b{color:var(--cyan-soft); font-weight:500;}
+  .weather-temp{ font-family:var(--font-disp); font-size:28px; color:var(--white); font-weight:700; line-height:1;}
+  .weather-desc{ font-size:12.5px; color:var(--muted); margin-top:4px;}
+  .timer-display{ font-family:var(--font-mono); font-size:22px; color:var(--white); text-align:center; letter-spacing:.05em;}
+  .timer-sub{ font-size:11px; color:var(--muted); text-align:center; margin-top:2px; font-family:var(--font-mono);}
+  .event-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto;}
+  .event-list li{ font-size:11px; color:var(--white); border-left:2px solid var(--cyan-dim); padding-left:8px; line-height:1.4;}
+  .event-list .time{ color:var(--muted); font-size:10px; }
+  .event-empty{ font-size:12px; color:var(--muted); }
+
+  footer{
+    position:relative; z-index:1; flex-shrink:0;
+    border-top:1px solid var(--line); padding:12px 24px;
+    display:flex; align-items:center; gap:12px;
+  }
+  footer .prompt{ font-family:var(--font-mono); color:var(--cyan); font-size:14px; }
+  footer input{
+    flex:1; background:transparent; border:none; outline:none;
+    font-family:var(--font-mono); font-size:14px; color:var(--white); letter-spacing:.02em;
+  }
+  footer input::placeholder{ color:var(--muted); }
+  footer button{
+    background:none; border:1px solid var(--line-strong); color:var(--cyan-soft);
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.1em;
+    padding:8px 14px; border-radius:8px; cursor:pointer; transition:all .2s;
+  }
+  footer button:active{ background:rgba(79,216,232,.12); }
+  footer .mic-btn{ display:flex; align-items:center; justify-content:center; width:38px; padding:0; }
+  footer .mic-btn.on{ border-color:var(--amber); color:var(--amber); }
+
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  @keyframes ripple{ 0%{ transform:scale(.75); opacity:.55;} 100%{ transform:scale(1.25); opacity:0;} }
+
+  ::-webkit-scrollbar{ width:5px; }
+  ::-webkit-scrollbar-thumb{ background:var(--cyan-dim); border-radius:3px; }
+
+  @media (max-width: 880px){
+    main{ grid-template-columns:1fr; grid-template-rows:auto auto auto; overflow-y:auto; }
+    .panel.left, .panel.right{ border:none; border-top:1px solid var(--line); }
+    body{ overflow-y:auto; }
+    .core-wrap{ width:220px; height:220px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ring, .core-wrap.listening .pulse-ripple, .brand .dot{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span><span>J · A · R · V · I · S</span></div>
+  <div class="clock-wrap">
+    <div id="clock">--:--:--</div>
+    <div id="dateline">—</div>
+  </div>
+  <div class="status-pill"><span class="ring"></span><span id="uplink">UPLINK ACTIVE</span></div>
+</header>
+
+<main>
+  <!-- LEFT: systems & apps -->
+  <section class="panel left">
+    <h2>SYSTEM <span>STATUS</span></h2>
+
+    <div class="sys-row">
+      <div class="label"><span>POWER CELL</span><b id="battTxt">—</b></div>
+      <div class="bar"><i id="battBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>CORE LOAD</span><b id="loadTxt">—</b></div>
+      <div class="bar"><i id="loadBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>SIGNAL</span><b id="sigTxt">—</b></div>
+      <div class="bar"><i id="sigBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>CONNECTION</span></div>
+      <div class="net-line" id="netLine"><span class="ring"></span><span id="netTxt">Checking…</span></div>
+    </div>
+
+    <h2 style="margin-top:28px;">MODULES</h2>
+    <ul class="app-list" id="appList">
+      <li class="active" data-app="core"><span class="icon">◉</span><span>Interface</span></li>
+      <li data-app="calendar"><span class="icon">📅</span><span>Calendar</span></li>
+      <li data-app="reminders"><span class="icon">✓</span><span>Reminders</span></li>
+      <li data-app="notes"><span class="icon">📝</span><span>Notes</span></li>
+      <li data-app="music"><span class="icon">♫</span><span>Music</span></li>
+    </ul>
+  </section>
+
+  <!-- CENTER: core -->
+  <section class="center">
+    <div class="greeting">
+      <div class="h1" id="greetLine">Initializing<em>…</em></div>
+      <div class="h2">Tap the core to speak, or type a command</div>
+    </div>
+
+    <div class="core-wrap" id="core">
+      <div class="pulse-ripple"></div>
+      <svg viewBox="0 0 260 260">
+        <defs>
+          <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#4fd8e8" stop-opacity="0.55"/>
+            <stop offset="60%" stop-color="#1f4a53" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#4fd8e8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="core-fill" cx="130" cy="130" r="58"/>
+        <circle class="ring core" cx="130" cy="130" r="70"/>
+        <circle class="ring c" cx="130" cy="130" r="92"/>
+        <circle class="ring b" cx="130" cy="130" r="112"/>
+        <circle class="ring a" cx="130" cy="130" r="128"/>
+      </svg>
+      <div class="center-icon">
+        <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="#4fd8e8" stroke-width="1.6">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <path d="M12 17v4"/>
+          <path d="M8 21h8"/>
+        </svg>
+        <span class="cta" id="coreCta">TAP TO SPEAK</span>
+      </div>
+    </div>
+
+    <div class="transcript" id="transcript">
+      <span class="you" id="youLine" style="display:none;"></span>
+      <span id="jarvisLine">All systems online, sir.</span>
+    </div>
+  </section>
+
+  <!-- RIGHT: modules -->
+  <section class="panel right">
+    <h2>MODULES</h2>
+
+    <div class="module">
+      <div class="m-title"><b>WEATHER</b><span id="wxLoc">—</span></div>
+      <div class="weather-temp" id="wxTemp">--°</div>
+      <div class="weather-desc" id="wxDesc">Awaiting location</div>
+    </div>
+
+    <div class="module">
+      <div class="m-title"><b>TIMER</b><span id="timerState">IDLE</span></div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-sub">set a timer for X minutes</div>
+    </div>
+
+    <div class="module">
+      <div class="m-title"><b>SCHEDULE</b><span id="schedCount">0</span></div>
+      <ul class="event-list" id="eventList">
+        <li class="event-empty">No events scheduled</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span class="prompt">&gt;</span>
+  <input id="cmdInput" type="text" placeholder="Type or speak a command…" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <button class="mic-btn" id="micBtn" title="Voice input">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/><path d="M8 21h8"/>
+    </svg>
+  </button>
+  <button id="sendBtn">SEND</button>
+</footer>
+
+<script>
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  navigator.serviceWorker.register('data:application/javascript,self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(clients.claim()));');
+}
+
+(function(){
+  "use strict";
+
+  /* ---------- CLOCK ---------- */
+  const clockEl = document.getElementById('clock');
+  const dateEl = document.getElementById('dateline');
+  const greetEl = document.getElementById('greetLine');
+  let greeted = false;
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+
+  function tickClock(){
+    const now = new Date();
+    clockEl.textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+    dateEl.textContent = now.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+    if(!greeted){
+      greeted = true;
+      const h = now.getHours();
+      const word = h<5 ? 'Good morning' : h<12 ? 'Good morning' : h<18 ? 'Good afternoon' : 'Good evening';
+      greetEl.innerHTML = word + (h<5? '' : ', <em>sir</em>');
+    }
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  /* ---------- JARVIS VOICE (British, crisp, natural pace like Iron Man's Jarvis) ---------- */
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.15;
+      u.pitch = 1.0;
+      u.volume = 1;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const britishVoice = voices.find(v => 
+        v.lang.includes('en-GB') || v.lang.includes('en-UK') ||
+        v.name.includes('Victoria') || v.name.includes('Daniel') ||
+        v.name.includes('British') || v.name.includes('Samantha')
+      );
+      
+      if(britishVoice) u.voice = britishVoice;
+      else if(voices.length > 0) u.voice = voices[0];
+      
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged = function(){};
+  }
+
+  /* ---------- TELEMETRY ---------- */
+  function setBar(barId,txtId,val,suffix){
+    document.getElementById(barId).style.width = val+'%';
+    document.getElementById(txtId).textContent = Math.round(val)+(suffix||'%');
+  }
+
+  if(navigator.getBattery){
+    navigator.getBattery().then(function(b){
+      function upd(){ setBar('battBar','battTxt', b.level*100, b.charging? '% CHG':'%'); }
+      upd(); b.addEventListener('levelchange',upd); b.addEventListener('chargingchange',upd);
+    }).catch(function(){ setBar('battBar','battTxt', 92); });
+  } else {
+    setBar('battBar','battTxt', 92);
+  }
+
+  function randomWalk(current,min,max,step){
+    let v = current + (Math.random()*step*2 - step);
+    return Math.max(min, Math.min(max, v));
+  }
+  let load = 34, sig = 81;
+  setInterval(function(){
+    load = randomWalk(load, 12, 68, 6);
+    sig = randomWalk(sig, 62, 97, 4);
+    setBar('loadBar','loadTxt', load);
+    setBar('sigBar','sigTxt', sig);
+  }, 2200);
+  setBar('loadBar','loadTxt', load);
+  setBar('sigBar','sigTxt', sig);
+
+  function updateNet(){
+    const online = navigator.onLine;
+    const line = document.getElementById('netLine');
+    document.getElementById('netTxt').textContent = online? 'Online — stable' : 'Offline';
+    line.classList.toggle('off', !online);
+  }
+  updateNet();
+  window.addEventListener('online', updateNet);
+  window.addEventListener('offline', updateNet);
+
+  /* ---------- WEATHER ---------- */
+  const wxTemp = document.getElementById('wxTemp');
+  const wxDesc = document.getElementById('wxDesc');
+  const wxLoc = document.getElementById('wxLoc');
+  let lastWeather = null;
+
+  const WMO = {
+    0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+    45:'Fog',48:'Fog',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',
+    61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
+    80:'Rain showers',81:'Rain showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'
+  };
+
+  function fetchWeather(lat,lon){
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weather_code&temperature_unit=fahrenheit')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        const t = Math.round(d.current.temperature_2m);
+        const code = d.current.weather_code;
+        lastWeather = { temp:t, desc: WMO[code] || 'Conditions nominal' };
+        wxTemp.textContent = t+'°F';
+        wxDesc.textContent = lastWeather.desc;
+        wxLoc.textContent = 'LIVE';
+      })
+      .catch(function(){
+        wxDesc.textContent = 'Weather unavailable';
+        wxLoc.textContent = '—';
+      });
+  }
+
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){ fetchWeather(pos.coords.latitude, pos.coords.longitude); },
+      function(){ wxDesc.textContent = 'Location access denied'; wxLoc.textContent = '—'; },
+      { timeout: 8000 }
+    );
+  }
+
+  /* ---------- CALENDAR / EVENTS ---------- */
+  const eventList = document.getElementById('eventList');
+  const schedCount = document.getElementById('schedCount');
+  let events = [];
+
+  function addEvent(title,time){
+    events.push({title,time});
+    renderEvents();
+  }
+  function renderEvents(){
+    schedCount.textContent = events.length;
+    if(events.length===0){
+      eventList.innerHTML = '<li class="event-empty">No events scheduled</li>';
+      return;
+    }
+    eventList.innerHTML = events.map(function(e){
+      return '<li><span class="time">'+e.time+'</span><br>'+escapeHtml(e.title)+'</li>';
+    }).join('');
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  /* ---------- TIMER ---------- */
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerState = document.getElementById('timerState');
+  let timerInterval = null, timerSeconds = 0;
+
+  function startTimer(mins){
+    clearInterval(timerInterval);
+    timerSeconds = Math.round(mins*60);
+    timerState.textContent = 'RUNNING';
+    updateTimerDisplay();
+    timerInterval = setInterval(function(){
+      timerSeconds--;
+      updateTimerDisplay();
+      if(timerSeconds<=0){
+        clearInterval(timerInterval);
+        timerState.textContent = 'DONE';
+        speak('Your timer has completed, sir.');
+        setJarvisLine('Timer complete.');
+      }
+    },1000);
+  }
+  function updateTimerDisplay(){
+    const m = Math.floor(timerSeconds/60), s = timerSeconds%60;
+    timerDisplay.textContent = pad(m)+':'+pad(s);
+  }
+
+  /* ---------- CORE & TRANSCRIPT ---------- */
+  const core = document.getElementById('core');
+  const coreCta = document.getElementById('coreCta');
+  const jarvisLine = document.getElementById('jarvisLine');
+  const youLine = document.getElementById('youLine');
+
+  function setJarvisLine(text){
+    jarvisLine.textContent = text;
+  }
+  function setYouLine(text){
+    youLine.style.display = text? 'block':'none';
+    youLine.textContent = text? ('"'+text+'"') : '';
+  }
+
+  /* ---------- COMMAND PARSER ---------- */
+  function handleCommand(raw){
+    const text = raw.trim();
+    if(!text) return;
+    setYouLine(text);
+    const cmd = text.toLowerCase();
+    let reply = "";
+
+    if(/what.*time|current time|tell me.*time/.test(cmd)){
+      const now = new Date();
+      reply = now.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}) + ".";
+    } else if(/what.*date|today.*date|what day/.test(cmd)){
+      reply = new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}) + ".";
+    } else if(/weather|temperature|conditions/.test(cmd)){
+      reply = lastWeather ? (lastWeather.temp+" degrees and "+lastWeather.desc.toLowerCase()+".") : "I'm unable to retrieve weather data at present.";
+    } else if(/^(remember|note)\b|add.*event|create.*event|schedule/.test(cmd)){
+      const content = text.replace(/^(remember to|remember that|remember|note that|note|add|create|schedule)\s*[:\-]?\s*/i,'');
+      if(content){
+        const timeMatch = content.match(/at\s+(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+        const time = timeMatch ? timeMatch[0] : 'noted';
+        const eventTitle = content.replace(/at\s+\d{1,2}:?\d{2}?\s*(am|pm)?/i,'').trim();
+        addEvent(eventTitle,time);
+        reply = "Very good. " + eventTitle + " has been scheduled.";
+      } else {
+        reply = "What would you like me to note?";
+      }
+    } else if(/timer|countdown|set.*timer/.test(cmd)){
+      const m = cmd.match(/(\d+(\.\d+)?)\s*(minute|min|second|sec|hour)/);
+      if(m){
+        let val = parseFloat(m[1]);
+        if(/hour/.test(m[3])) val*=60;
+        if(/sec/.test(m[3])) val/=60;
+        startTimer(val);
+        reply = m[1] + " " + m[3] + (parseFloat(m[1])===1?'':'s') + ". Timer activated.";
+      } else {
+        reply = "How long would you like the timer to run?";
+      }
+    } else if(/what can you do|help|capabilit|functions/i.test(cmd)){
+      reply = "I can manage your schedule, set timers, check the weather, retrieve the time, and provide information. How may I assist you, sir?";
+    } else if(/hello|hi jarvis|hey|greetings/i.test(cmd)){
+      reply = "Good morning, sir.";
+    } else if(/thank|thanks/i.test(cmd)){
+      reply = "You're welcome.";
+    } else if(/who are you|your name|who|identity/i.test(cmd)){
+      reply = "I am J.A.R.V.I.S. A.I. How may I be of service?";
+    } else if(/open|launch|play music/i.test(cmd)){
+      reply = "I'm afraid I haven't quite that capability. However, I can assist with scheduling and information queries.";
+    } else {
+      reply = "I'm not certain I understand, sir.";
+    }
+
+    setJarvisLine(reply);
+    speak(reply);
+  }
+
+  /* ---------- VOICE RECOGNITION ---------- */
+  const micBtn = document.getElementById('micBtn');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null, listening = false;
+
+  function setListening(on){
+    listening = on;
+    core.classList.toggle('listening', on);
+    micBtn.classList.toggle('on', on);
+    coreCta.textContent = on ? 'LISTENING…' : 'TAP TO SPEAK';
+  }
+
+  function toggleListen(){
+    if(!SR){
+      setJarvisLine("Voice recognition is not available. Please enter commands via text.");
+      return;
+    }
+    if(listening){ recognizer && recognizer.stop(); return; }
+    recognizer = new SR();
+    recognizer.lang = 'en-GB';
+    recognizer.interimResults = false;
+    recognizer.maxAlternatives = 1;
+    recognizer.onstart = function(){ setListening(true); };
+    recognizer.onend = function(){ setListening(false); };
+    recognizer.onerror = function(){ setListening(false); };
+    recognizer.onresult = function(e){
+      const said = e.results[0][0].transcript;
+      handleCommand(said);
+    };
+    try{ recognizer.start(); }catch(e){ setListening(false); }
+  }
+
+  core.addEventListener('click', toggleListen);
+  micBtn.addEventListener('click', toggleListen);
+
+  /* ---------- TEXT INPUT ---------- */
+  const cmdInput = document.getElementById('cmdInput');
+  const sendBtn = document.getElementById('sendBtn');
+  function submitText(){
+    const v = cmdInput.value;
+    if(!v.trim()) return;
+    handleCommand(v);
+    cmdInput.value = '';
+  }
+  sendBtn.addEventListener('click', submitText);
+  cmdInput.addEventListener('keydown', function(e){ if(e.key==='Enter') submitText(); });
+
+  /* ---------- APP SWITCHER ---------- */
+  const appList = document.getElementById('appList');
+  appList.addEventListener('click', function(e){
+    const li = e.target.closest('li');
+    if(!li) return;
+    const app = li.dataset.app;
+    document.querySelectorAll('#appList li').forEach(x => x.classList.remove('active'));
+    li.classList.add('active');
+    const appName = li.textContent.trim();
+    setJarvisLine('Accessing '+appName+'.');
+    speak('Accessing '+appName+'.');
+  });
+
+  setJarvisLine('All systems online, sir.');
+})();
+</script>
+</body>
+</html>
