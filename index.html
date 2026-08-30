@@ -206,7 +206,21 @@
 </style>
 </head>
 <body>
+<!-- JARVIS STARTUP SCREEN -->
+<div id="jarvisStartup">
+  <div class="startup-orb">
+    <div class="startup-ring ring1"></div>
+    <div class="startup-ring ring2"></div>
+    <div class="startup-ring ring3"></div>
+    <div class="startup-core"></div>
+  </div>
 
+  <div class="startup-title">J.A.R.V.I.S.</div>
+
+  <div class="startup-status" id="startupStatus">
+    INITIALIZING SYSTEMS...
+  </div>
+</div>
 <header>
   <div class="brand"><span class="dot"></span><span>J · A · R · V · I · S</span></div>
   <div class="clock-wrap">
@@ -659,92 +673,22 @@ if('serviceWorker' in navigator){
       const searchURL = "https://www.google.com/search?q=" + encodeURIComponent(question);
       window.open(searchURL, "_blank");
     }
+    /* ---------- STARTUP SCREEN ---------- */
+const startup = document.getElementById('jarvisStartup');
+const startupStatus = document.getElementById('startupStatus');
+
+setTimeout(function(){
+  startupStatus.textContent = 'SYSTEMS ONLINE...';
+}, 1500);
+
+setTimeout(function(){
+  startupStatus.textContent = 'WELCOME, SIR.';
+}, 2800);
+
+setTimeout(function(){
+  startup.classList.add('hide');
+}, 3800);
   });setJarvisLine('All systems online, sir.');
-})();
-</script>
-
-<div id="jarvisOrb"></div>
-<style>
-#jarvisOrb {
-  width: 280px;
-  height: 280px;
-  margin: 25px auto;
-  position: relative;
-  border-radius: 50%;
-  overflow: hidden;
-  touch-action: none;
-  background: radial-gradient(circle, rgba(79,216,232,.12), transparent 68%);
-  box-shadow: 0 0 35px rgba(79,216,232,.55);
-}
-
-.jarvisDot {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #4fd8e8;
-  box-shadow: 0 0 9px #4fd8e8;
-  transform: translate(-50%, -50%);
-  transition: transform .12s ease-out;
-}
-</style>
-
-<script>
-(function(){
-  const orb = document.getElementById("jarvisOrb");
-  if (!orb) return;
-
-  const dots = [];
-  const totalDots = 180;
-  const center = 140;
-
-  for(let i = 0; i < totalDots; i++){
-    const dot = document.createElement("div");
-    dot.className = "jarvisDot";
-
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 35 + Math.random() * 95;
-
-    const x = center + Math.cos(angle) * radius;
-    const y = center + Math.sin(angle) * radius;
-
-    dot.style.left = x + "px";
-    dot.style.top = y + "px";
-    dot.dataset.x = x;
-    dot.dataset.y = y;
-
-    orb.appendChild(dot);
-    dots.push(dot);
-  }
-
-  orb.addEventListener("pointermove", function(e){
-    const rect = orb.getBoundingClientRect();
-    const fx = e.clientX - rect.left;
-    const fy = e.clientY - rect.top;
-
-    dots.forEach(function(dot){
-      const x = Number(dot.dataset.x);
-      const y = Number(dot.dataset.y);
-      const dx = fx - x;
-      const dy = fy - y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if(distance < 100){
-        const strength = (100 - distance) / 100;
-        dot.style.transform =
-          "translate(" + dx * strength * .55 + "px," +
-          dy * strength * .55 + "px) translate(-50%,-50%)";
-      } else {
-        dot.style.transform = "translate(-50%,-50%)";
-      }
-    });
-  });
-
-  orb.addEventListener("pointerleave", function(){
-    dots.forEach(function(dot){
-      dot.style.transform = "translate(-50%,-50%)";
-    });
-  });
 })();
 </script>
 </body>
