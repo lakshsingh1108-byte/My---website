@@ -7,9 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="JARVIS">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#05080d">
 <link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23050a0d' width='192' height='192'/><circle cx='96' cy='96' r='68' fill='%234fd8e8' opacity='0.3'/><circle cx='96' cy='96' r='50' fill='none' stroke='%234fd8e8' stroke-width='3'/></svg>">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -175,6 +177,15 @@
   footer .mic-btn{ display:flex; align-items:center; justify-content:center; width:38px; padding:0; }
   footer .mic-btn.on{ border-color:var(--amber); color:var(--amber); }
 
+  .action-row{ text-align:center; margin:20px 0; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding:0 16px 16px; }
+  .action-btn{
+    display:inline-block; padding:12px 20px; border:2px solid var(--cyan);
+    border-radius:12px; background:transparent; color:var(--cyan);
+    font-family:Arial,sans-serif; font-weight:bold; text-decoration:none;
+    letter-spacing:1px; box-shadow:0 0 15px rgba(79,216,232,.4); cursor:pointer;
+    font-size:14px;
+  }
+
   @keyframes spin{ to{ transform:rotate(360deg); } }
   @keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
   @keyframes ripple{ 0%{ transform:scale(.75); opacity:.55;} 100%{ transform:scale(1.25); opacity:0;} }
@@ -278,6 +289,11 @@
       <span class="you" id="youLine" style="display:none;"></span>
       <span id="jarvisLine">All systems online, sir.</span>
     </div>
+
+    <div class="action-row">
+      <a class="action-btn" href="https://open.spotify.com/search/Barasat" target="_blank" rel="noopener">🎵 PLAY BARASAT ON SPOTIFY</a>
+      <button class="action-btn" id="webSearchButton" type="button">🌐 ASK JARVIS</button>
+    </div>
   </section>
 
   <!-- RIGHT: modules -->
@@ -317,8 +333,12 @@
 </footer>
 
 <script>
-if('serviceWorker' in navigator && location.protocol==='https:'){
-  navigator.serviceWorker.register('data:application/javascript,self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(clients.claim()));');
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(err){
+      console.warn('Service worker registration failed:', err);
+    });
+  });
 }
 
 (function(){
@@ -355,17 +375,17 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
       u.rate = 1.15;
       u.pitch = 1.0;
       u.volume = 1;
-      
+
       const voices = window.speechSynthesis.getVoices();
-      const britishVoice = voices.find(v => 
+      const britishVoice = voices.find(v =>
         v.lang.includes('en-GB') || v.lang.includes('en-UK') ||
         v.name.includes('Victoria') || v.name.includes('Daniel') ||
         v.name.includes('British') || v.name.includes('Samantha')
       );
-      
+
       if(britishVoice) u.voice = britishVoice;
       else if(voices.length > 0) u.voice = voices[0];
-      
+
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
@@ -631,53 +651,19 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
     speak('Accessing '+appName+'.');
   });
 
+  /* ---------- ASK JARVIS (web search) ---------- */
+  const webSearchButton = document.getElementById('webSearchButton');
+  webSearchButton.addEventListener('click', function(){
+    const question = prompt("What should I search for?");
+    if(question){
+      const searchURL = "https://www.google.com/search?q=" + encodeURIComponent(question);
+      window.open(searchURL, "_blank");
+    }
+  });
+
   setJarvisLine('All systems online, sir.');
 })();
 </script>
-<!-- PUT SPOTIFY BUTTON HERE -->
-  <a href="https://open.spotify.com/search/Barasat"
-   target="_blank"
-   style="display:inline-block;
-   padding:14px 25px;
-   border:2px solid #00eaff;
-   border-radius:12px;
-   background:transparent;
-   color:#00eaff;
-   font-family:Arial,sans-serif;
-   font-weight:bold;
-   text-decoration:none;
-   letter-spacing:1px;
-   box-shadow:0 0 15px #00eaff;">
-   🎵 PLAY BARASAT ON SPOTIFY
-</a>;
-<div style="text-align:center;margin:25px;">
-  <button id="webSearchButton"
-    style="padding:15px 25px;
-    border:2px solid #00eaff;
-    border-radius:12px;
-    background:transparent;
-    color:#00eaff;
-    font-size:16px;
-    font-weight:bold;
-    box-shadow:0 0 15px #00eaff;">
-    🌐 ASK JARVIS
-  </button>
-  div>
 
-<script>
-document.getElementById("webSearchButton").onclick = () => {
-  const question = prompt("What should I search for?");
-  
-  if (question) {
-    const searchURL =
-      "https://www.google.com/search?q=" +
-      encodeURIComponent(question);
-
-    window.open(searchURL, "_blank");
-  }
-};
-</script>
-  
-</
 </body>
 </html>
