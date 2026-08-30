@@ -650,5 +650,56 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
    box-shadow:0 0 15px #00eaff;">
    🎵 PLAY BARASAT ON SPOTIFY
 </a>
+  <div style="text-align:center;margin:25px;">
+  <button id="jarvisVoice"
+    style="padding:15px 25px;border:2px solid #00eaff;
+    border-radius:12px;background:transparent;color:#00eaff;
+    font-size:16px;font-weight:bold;box-shadow:0 0 15px #00eaff;">
+    🎙️ TALK TO JARVIS
+  </button>
+  <p id="jarvisStatus" style="color:#00eaff;">
+    🟢 J.A.R.V.I.S. ONLINE
+  </p>
+</div>
+
+<script>
+const button = document.getElementById("jarvisVoice");
+const status = document.getElementById("jarvisStatus");
+
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+  const recognition = new SpeechRecognition();
+
+  recognition.onstart = () => {
+    status.textContent = "🎙️ LISTENING...";
+  };
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+
+    status.textContent = "🤖 YOU SAID: " + text;
+
+    const reply = new SpeechSynthesisUtterance(
+      "Yes, sir. You said " + text
+    );
+
+    reply.rate = 1;
+    reply.pitch = 1;
+    speechSynthesis.speak(reply);
+  };
+
+  recognition.onend = () => {
+    if (status.textContent === "🎙️ LISTENING...") {
+      status.textContent = "🟢 J.A.R.V.I.S. ONLINE";
+    }
+  };
+
+  button.onclick = () => {
+    recognition.start();
+  };
+} else {
+  status.textContent = "⚠️ Voice recognition isn't supported here.";
 </body>
 </html>
