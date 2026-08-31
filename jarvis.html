@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>J.A.R.V.I.S. — Personal Interface</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05080d">
+
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#05080d;
+  --bg-panel:#0a121c;
+  --bg-panel2:#0d1926;
+  --line:rgba(79,216,232,.16);
+  --line-strong:rgba(79,216,232,.32);
+  --cyan:#4fd8e8;
+  --cyan-soft:#8fe9f2;
+  --cyan-dim:#1f4a53;
+  --amber:#ffb454;
+  --red:#ff5f5f;
+  --green:#6dffb0;
+  --white:#eaf6fb;
+  --muted:#5b7a8c;
+  --font-disp:'Orbitron',sans-serif;
+  --font-ui:'Rajdhani',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html,body{ margin:0; width:100%; height:100%; background:var(--bg); color:var(--white); font-family:var(--font-ui); overflow:hidden; -webkit-user-select:none; user-select:none; }
+
+body{
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 12%,rgba(79,216,232,.07),transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 100%,rgba(79,216,232,.05),transparent 60%),
+    var(--bg);
+  display:flex; flex-direction:column; height:100vh; height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* =========================================================
+   STARTUP / GESTURE SCREEN
+   ========================================================= */
+
+#jarvisStartup{
+  position:fixed; inset:0; z-index:99999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:
+    radial-gradient(circle at center, rgba(79,216,232,.12) 0%, rgba(5,8,13,.96) 38%, #020407 100%);
+  overflow:hidden;
+  opacity:1; visibility:visible;
+  transition:opacity .9s ease, visibility .9s ease;
+  touch-action:none;
+}
+
+#jarvisStartup::before{
+  content:""; position:absolute; inset:-50%;
+  background:
+    linear-gradient(rgba(79,216,232,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,216,232,.035) 1px,transparent 1px);
+  background-size:40px 40px;
+  transform:perspective(500px) rotateX(55deg);
+  animation:startupGrid 8s linear infinite;
+}
+
+#jarvisStartup::after{
+  content:""; position:absolute; width:600px; height:600px; border-radius:50%;
+  border:1px solid rgba(79,216,232,.06);
+  box-shadow:0 0 80px rgba(79,216,232,.05), inset 0 0 80px rgba(79,216,232,.04);
+  animation:startupAtmosphere 4s ease-in-out infinite;
+}
+
+/* the part the finger actually scales — kept separate from the
+   orb's own float/spin animations so inline transforms don't fight CSS ones */
+.gesture-scale{
+  position:relative; z-index:2;
+  transform:scale(1);
+  will-change:transform;
+}
+
+.gesture-scale.snap{ transition:transform .55s cubic-bezier(.34,1.56,.64,1); }
+.gesture-scale.burst{ transition:transform .38s cubic-bezier(.4,0,.2,1), opacity .38s ease; }
+
+.startup-orb{
+  position:relative; width:280px; height:280px;
+  display:flex; align-items:center; justify-content:center;
+  animation:startupOrbAppear 1.3s ease-out forwards, startupFloat 4s ease-in-out 1.3s infinite;
+}
+
+.startup-orb svg{
+  width:100%; height:100%; overflow:visible;
+  filter:drop-shadow(0 0 20px rgba(79,216,232,.6)) drop-shadow(0 0 40px rgba(79,216,232,.35));
+}
+
+.ring{ fill:none; stroke:var(--cyan); stroke-linecap:round; stroke-linejoin:round; }
+.ring.r1{ stroke-width:1.2; opacity:.75; animation:spinRing1 45s linear infinite; }
+.ring.r2{ stroke-width:1.4; opacity:.85; animation:spinRing2 28s linear infinite reverse; }
+.ring.r3{ stroke-width:1.1; opacity:.6; animation:spinRing3 65s linear infinite; }
+.ring.r4{ stroke-width:2; opacity:.9; animation:spinRing1 50s linear infinite reverse; }
+
+.gauge-marks line{ stroke:var(--cyan); stroke-width:.8; opacity:.5; animation:gaugePulse 2.2s ease-in-out infinite; }
+
+.center-text{
+  font-family:var(--font-disp); font-size:18px; font-weight:900;
+  letter-spacing:.28em; color:var(--cyan-soft);
+  text-shadow:0 0 12px var(--cyan), 0 0 30px rgba(79,216,232,.7), inset 0 0 20px rgba(79,216,232,.3);
+  opacity:.95; animation:textGlow 3s ease-in-out infinite;
+}
+
+@keyframes spinRing1{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes spinRing2{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes spinRing3{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes corePulse{ 0%,100%{stroke-width:1.6; opacity:.7;} 50%{stroke-width:2.2; opacity:1;} }
+@keyframes gaugePulse{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
+@keyframes textGlow{ 0%,100%{text-shadow:0 0 12px var(--cyan), 0 0 30px rgba(79,216,232,.7), inset 0 0 20px rgba(79,216,232,.3);} 50%{text-shadow:0 0 18px var(--cyan), 0 0 50px rgba(79,216,232,1), inset 0 0 30px rgba(79,216,232,.5);} }
+
+.startup-title{
+  position:relative; z-index:3; margin-top:28px;
+  font-family:var(--font-disp); font-size:27px; font-weight:900; letter-spacing:.32em;
+  color:var(--cyan-soft);
+  text-shadow:0 0 8px var(--cyan),0 0 25px rgba(79,216,232,.55);
+  opacity:0;
+  animation:startupTitleIn 1.1s ease-out .55s forwards, startupTitleGlow 2s ease-in-out 1.8s infinite;
+}
+
+.startup-status{
+  position:relative; z-index:3; margin-top:10px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.22em; color:var(--muted);
+  min-height:16px; opacity:0;
+  animation:startupStatusIn .9s ease-out 1s forwards;
+}
+
+.startup-hint{
+  position:relative; z-index:3; margin-top:22px;
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--cyan-dim);
+  opacity:0; text-align:center; max-width:280px; line-height:1.6;
+  animation:startupStatusIn .9s ease-out 1.6s forwards;
+}
+
+.startup-power{
+  position:relative; z-index:3; margin-top:14px; width:180px; height:4px;
+  border:1px solid var(--line-strong); border-radius:3px; overflow:hidden;
+  opacity:0; animation:startupStatusIn .9s ease-out 1.6s forwards;
+}
+
+.startup-power i{ display:block; height:100%; width:33%; background:linear-gradient(90deg,var(--cyan-dim),var(--cyan)); transition:width .05s linear, background .2s ease; }
+
+.startup-skip{
+  position:absolute; bottom:28px; z-index:3;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:.15em; color:var(--muted);
+  background:none; border:1px solid var(--line); border-radius:20px; padding:8px 18px; cursor:pointer;
+  opacity:0; animation:startupStatusIn .9s ease-out 2s forwards;
+}
+
+#jarvisStartup.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+
+@keyframes startupGrid{ from{transform:perspective(500px) rotateX(55deg) translateY(0);} to{transform:perspective(500px) rotateX(55deg) translateY(40px);} }
+@keyframes startupAtmosphere{ 0%,100%{transform:scale(.92);opacity:.45;} 50%{transform:scale(1.05);opacity:1;} }
+@keyframes startupOrbAppear{ 0%{opacity:0;transform:scale(.25) rotate(-180deg);filter:blur(12px);} 60%{opacity:1;transform:scale(1.08) rotate(15deg);filter:blur(0);} 100%{transform:scale(1) rotate(0);} }
+@keyframes startupFloat{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+
+@keyframes startupTitleIn{ from{opacity:0;transform:translateY(12px);letter-spacing:.55em;} to{opacity:1;transform:translateY(0);letter-spacing:.32em;} }
+@keyframes startupTitleGlow{ 0%,100%{text-shadow:0 0 8px var(--cyan),0 0 25px rgba(79,216,232,.55);} 50%{text-shadow:0 0 14px var(--cyan),0 0 40px rgba(79,216,232,.9);} }
+@keyframes startupStatusIn{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+@keyframes shakeSmall{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-6px) rotate(-2deg);} 40%{transform:translateX(5px) rotate(2deg);} 60%{transform:translateX(-4px) rotate(-1deg);} 80%{transform:translateX(3px) rotate(1deg);} }
+.gesture-scale.shake{ animation:shakeSmall .4s ease; }
+
+/* =========================================================
+   BACKGROUND
+   ========================================================= */
+
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(79,216,232,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(79,216,232,.035) 1px,transparent 1px);
+  background-size:36px 36px;
+  -webkit-mask-image:radial-gradient(ellipse 75% 75% at 50% 45%,black 30%,transparent 78%);
+  mask-image:radial-gradient(ellipse 75% 75% at 50% 45%,black 30%,transparent 78%);
+}
+
+body::after{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:10;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0px, rgba(0,0,0,.15) 1px, transparent 1px, transparent 2px);
+  animation:scanlines 8s linear infinite;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+header{ position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; padding:14px 26px; border-bottom:1px solid var(--line); flex-shrink:0; background:rgba(10,18,28,.6); backdrop-filter:blur(10px); }
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand .dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); animation:blink 2.4s ease-in-out infinite; }
+.brand span{ font-family:var(--font-disp); font-weight:700; letter-spacing:.34em; font-size:14px; color:var(--cyan-soft); text-shadow:0 0 8px rgba(79,216,232,.5); }
+.clock-wrap{ text-align:center; }
+#clock{ font-family:var(--font-mono); font-size:26px; letter-spacing:.06em; color:var(--white); line-height:1; text-shadow:0 0 6px rgba(79,216,232,.4); }
+#dateline{ font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; color:var(--muted); margin-top:4px; }
+.status-pill{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--cyan-soft); border:1px solid var(--line-strong); padding:6px 12px; border-radius:20px; display:flex; align-items:center; gap:8px; background:rgba(79,216,232,.08); cursor:pointer; transition:all .3s ease; }
+.status-pill:hover{ background:rgba(79,216,232,.15); box-shadow:0 0 15px rgba(79,216,232,.3); }
+.status-pill .ring{ width:6px; height:6px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); transition:all .3s ease; }
+.status-pill.muted{ color:var(--muted); }
+.status-pill.muted .ring{ background:var(--muted); box-shadow:none; }
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+main{ position:relative; z-index:1; flex:1; min-height:0; display:grid; grid-template-columns:230px 1fr 270px; gap:0; }
+.panel{ padding:20px 18px; overflow-y:auto; min-height:0; }
+.panel.left{ border-right:1px solid var(--line); }
+.panel.right{ border-left:1px solid var(--line); }
+.panel h2{ font-family:var(--font-disp); font-size:11px; letter-spacing:.24em; color:var(--muted); margin:0 0 16px; font-weight:700; }
+.panel h2 span{ color:var(--cyan-soft); }
+
+.sys-row{ margin-bottom:16px; }
+.sys-row .label{ display:flex; justify-content:space-between; font-size:12px; font-family:var(--font-mono); color:var(--muted); margin-bottom:6px; }
+.sys-row .label b{ color:var(--cyan-soft); font-weight:500; }
+.bar{ height:5px; border-radius:3px; background:rgba(79,216,232,.08); overflow:hidden; border:1px solid var(--line); }
+.bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--cyan-dim),var(--cyan)); border-radius:3px; transition:width .8s ease; }
+.net-line{ display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--white); }
+.net-line .ring{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 6px var(--cyan); flex-shrink:0; }
+.net-line.off .ring{ background:var(--red); box-shadow:0 0 6px var(--red); }
+
+.app-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.app-list li{ display:flex; align-items:center; gap:8px; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:11px; color:var(--cyan-soft); cursor:pointer; transition:all .25s ease; }
+.app-list li:hover{ background:rgba(79,216,232,.1); border-color:var(--cyan); box-shadow:0 0 12px rgba(79,216,232,.2), inset 0 0 10px rgba(79,216,232,.08); transform:translateX(4px); }
+.app-list li .icon{ width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; filter:drop-shadow(0 0 4px rgba(79,216,232,.4)); }
+.app-list li.active{ background:rgba(79,216,232,.2); border-color:var(--cyan); box-shadow:0 0 20px rgba(79,216,232,.4), inset 0 0 15px rgba(79,216,232,.15); }
+.app-list li .count{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--muted); }
+
+.center{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; padding:14px; }
+.greeting{ text-align:center; }
+.greeting .h1{ font-family:var(--font-disp); font-weight:700; font-size:22px; letter-spacing:.04em; color:var(--white); }
+.greeting .h1 em{ font-style:normal; color:var(--cyan); }
+.greeting .h2{ font-family:var(--font-ui); font-size:13px; color:var(--muted); margin-top:4px; letter-spacing:.03em; }
+
+.core-wrap{ position:relative; width:260px; height:260px; cursor:pointer; }
+.core-wrap svg{ width:100%; height:100%; overflow:visible; filter:drop-shadow(0 0 15px rgba(79,216,232,.5)); }
+.core-wrap:hover svg{ filter:drop-shadow(0 0 25px rgba(79,216,232,.8)); }
+.ring{ fill:none; stroke:var(--cyan-dim); transform-origin:130px 130px; }
+.ring.a{ stroke-width:1; stroke-dasharray:2 10; animation:spin 40s linear infinite; }
+.ring.b{ stroke-width:1.4; stroke-dasharray:1 3; stroke:var(--line-strong); animation:spin 26s linear infinite reverse; }
+.ring.c{ stroke-width:2; opacity:.55; animation:spin 60s linear infinite; }
+.ring.core{ stroke:var(--cyan); stroke-width:2; opacity:.9; filter:drop-shadow(0 0 8px rgba(79,216,232,.8)); }
+.core-fill{ fill:url(#coreGrad); opacity:.9; }
+.core-wrap .center-icon{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; pointer-events:none; }
+.center-icon .mic{ width:26px; height:26px; opacity:.85; }
+.center-icon .cta{ font-family:var(--font-mono); font-size:10px; letter-spacing:.18em; color:var(--cyan-soft); text-transform:uppercase; opacity:.75; }
+.core-wrap.listening .ring.core{ stroke:var(--amber); filter:drop-shadow(0 0 12px rgba(255,180,84,.9)); }
+.core-wrap.listening .center-icon .cta{ color:var(--amber); animation:float-up .4s ease; }
+.core-wrap.listening .ring.a{ animation-duration:8s; }
+.core-wrap.listening .ring.b{ animation-duration:6s; }
+.pulse-ripple{ position:absolute; inset:0; border-radius:50%; border:1px solid var(--amber); opacity:0; }
+.core-wrap.listening .pulse-ripple{ animation:ripple 1.6s ease-out infinite; }
+
+.transcript{ width:min(560px,88%); min-height:52px; text-align:center; font-family:var(--font-mono); font-size:14px; color:var(--cyan-soft); line-height:1.6; letter-spacing:.01em; }
+.transcript .you{ color:var(--muted); font-size:12px; display:block; margin-bottom:4px; animation:float-up .4s ease; }
+#jarvisLine{ display:block; animation:float-up .5s ease; text-shadow:0 0 12px rgba(79,216,232,.6); }
+
+.action-row{ text-align:center; margin:20px 0; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding:0 16px 16px; }
+.action-btn{ display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border:2px solid var(--cyan); border-radius:12px; background:transparent; color:var(--cyan); font-family:var(--font-ui); font-weight:700; text-decoration:none; letter-spacing:.03em; box-shadow:0 0 15px rgba(79,216,232,.4); cursor:pointer; font-size:14px; transition:transform .2s ease, background .2s ease, box-shadow .2s ease, text-shadow .2s ease; position:relative; overflow:hidden; }
+.action-btn::before{ content:''; position:absolute; inset:0; background:linear-gradient(45deg, transparent 30%, rgba(79,216,232,.1) 50%, transparent 70%); animation:shimmer 3s infinite; opacity:0; }
+.action-btn:hover{ background:rgba(79,216,232,.12); box-shadow:0 0 30px rgba(79,216,232,.7); transform:translateY(-3px); text-shadow:0 0 10px rgba(79,216,232,.8); }
+.action-btn:active{ transform:scale(.96); }
+@keyframes shimmer{ 0%{transform:translateX(-100%);opacity:0;} 50%{opacity:1;} 100%{transform:translateX(100%);opacity:0;} }
+
+.module{ margin-bottom:20px; border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--bg-panel2); transition:all .3s ease; }
+.module:hover{ border-color:var(--cyan); box-shadow:0 0 15px rgba(79,216,232,.2), inset 0 0 15px rgba(79,216,232,.05); }
+.module .m-title{ font-family:var(--font-mono); font-size:10px; letter-spacing:.16em; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.module .m-title b{ color:var(--cyan-soft); font-weight:500; text-shadow:0 0 8px rgba(79,216,232,.5); }
+.weather-temp{ font-family:var(--font-disp); font-size:28px; color:var(--white); font-weight:700; line-height:1; text-shadow:0 0 10px rgba(79,216,232,.5); }
+.weather-desc{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+.timer-display{ font-family:var(--font-mono); font-size:22px; color:var(--white); text-align:center; letter-spacing:.05em; text-shadow:0 0 8px rgba(79,216,232,.6); }
+.timer-sub{ font-size:11px; color:var(--muted); text-align:center; margin-top:2px; font-family:var(--font-mono); }
+.event-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto; }
+.event-list li{ font-size:11px; color:var(--white); border-left:2px solid var(--cyan-dim); padding-left:8px; line-height:1.4; display:flex; justify-content:space-between; gap:6px; }
+.event-list .time{ color:var(--muted); font-size:10px; }
+.event-list .rm{ background:none; border:none; color:var(--muted); cursor:pointer; font-family:var(--font-mono); font-size:11px; flex-shrink:0; }
+.event-list .rm:hover{ color:var(--red); }
+.event-empty{ font-size:12px; color:var(--muted); }
+
+footer{ position:relative; z-index:1; flex-shrink:0; border-top:1px solid var(--line); padding:12px 24px; display:flex; align-items:center; gap:12px; background:rgba(10,18,28,.6); backdrop-filter:blur(10px); }
+footer .prompt{ font-family:var(--font-mono); color:var(--cyan); font-size:14px; text-shadow:0 0 6px rgba(79,216,232,.4); }
+footer input{ flex:1; background:rgba(79,216,232,.05); border:1px solid var(--line); outline:none; font-family:var(--font-mono); font-size:14px; color:var(--white); letter-spacing:.02em; padding:8px 12px; border-radius:6px; transition:all .2s ease; }
+footer input:focus{ background:rgba(79,216,232,.1); border-color:var(--cyan); box-shadow:0 0 15px rgba(79,216,232,.2), inset 0 0 10px rgba(79,216,232,.08); }
+footer input::placeholder{ color:var(--muted); }
+footer button{ background:rgba(79,216,232,.08); border:1px solid var(--line-strong); color:var(--cyan-soft); font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; padding:8px 14px; border-radius:8px; cursor:pointer; transition:all .2s ease; }
+footer button:hover{ background:rgba(79,216,232,.15); border-color:var(--cyan); box-shadow:0 0 12px rgba(79,216,232,.3); }
+footer button:active{ background:rgba(79,216,232,.25); transform:scale(.95); }
+footer .mic-btn{ display:flex; align-items:center; justify-content:center; width:38px; padding:0; }
+footer .mic-btn.on{ border-color:var(--amber); color:var(--amber); background:rgba(255,180,84,.1); box-shadow:0 0 15px rgba(255,180,84,.3); }
+
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@keyframes blink{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+@keyframes ripple{ 0%{transform:scale(.75);opacity:.55;} 100%{transform:scale(1.25);opacity:0;} }
+@keyframes scanlines{ 0%{transform:translateY(0);} 100%{transform:translateY(10px);} }
+@keyframes glitch{ 0%{text-shadow:2px 0 var(--cyan),-2px 0 var(--amber);} 50%{text-shadow:-2px 0 var(--cyan),2px 0 var(--amber);} 100%{text-shadow:0 0 var(--cyan);} }
+@keyframes pulse-glow{ 0%,100%{box-shadow:0 0 10px rgba(79,216,232,.3), inset 0 0 10px rgba(79,216,232,.1);} 50%{box-shadow:0 0 25px rgba(79,216,232,.7), inset 0 0 20px rgba(79,216,232,.3);} }
+@keyframes float-up{ from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+
+@media(max-width:880px){
+  main{ grid-template-columns:1fr; grid-template-rows:auto auto auto; overflow-y:auto; }
+  .panel.left,.panel.right{ border:none; border-top:1px solid var(--line); }
+  body{ overflow-y:auto; }
+  .core-wrap{ width:220px; height:220px; }
+  .startup-orb{ width:210px; height:210px; }
+  .startup-title{ font-size:22px; }
+}
+
+@media(max-width:500px){
+  header{ padding:12px 14px; }
+  .brand span{ font-size:11px; }
+  #clock{ font-size:19px; }
+  #dateline{ font-size:9px; }
+  .status-pill{ padding:5px 8px; font-size:9px; }
+  .startup-title{ font-size:20px; letter-spacing:.22em; }
+  .startup-status{ font-size:9px; }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ring,.core-wrap.listening .pulse-ripple,.brand .dot,.startup-orb,.startup-ring,.startup-core,
+  #jarvisStartup::before,#jarvisStartup::after,.startup-title,.startup-status{ animation:none !important; }
+  #jarvisStartup{ transition:none; }
+  .gesture-scale.snap,.gesture-scale.burst{ transition:none; }
+}
+
+::-webkit-scrollbar{ width:5px; }
+::-webkit-scrollbar-thumb{ background:var(--cyan-dim); border-radius:3px; }
+</style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     JARVIS STARTUP / GESTURE SCREEN
+     Drag or pinch the core: scale it up to power on early,
+     scale it down and it protests, or just wait and it boots itself.
+     ========================================================= -->
+
+<div id="jarvisStartup">
+
+  <div class="gesture-scale" id="gestureScale">
+    <div class="startup-orb" id="startupOrbContainer">
+      <svg viewBox="0 0 280 280">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Outermost gauge ring with marks -->
+        <g id="gaugeMarks" class="gauge-marks">
+          <line x1="140" y1="20" x2="140" y2="28"/>
+          <line x1="172.8" y1="23.15" x2="178.3" y2="29.7"/>
+          <line x1="197.5" y1="43.5" x2="201" y2="50.5"/>
+          <line x1="211.8" y1="71.8" x2="213.5" y2="79.5"/>
+          <line x1="220" y1="105" x2="220" y2="113"/>
+          <line x1="220" y1="175" x2="220" y2="183"/>
+          <line x1="211.8" y1="208.2" x2="213.5" y2="200.5"/>
+          <line x1="197.5" y1="236.5" x2="201" y2="229.5"/>
+          <line x1="172.8" y1="256.85" x2="178.3" y2="250.3"/>
+          <line x1="140" y1="260" x2="140" y2="252"/>
+          <line x1="107.2" y1="256.85" x2="101.7" y2="250.3"/>
+          <line x1="82.5" y1="236.5" x2="79" y2="229.5"/>
+          <line x1="68.2" y1="208.2" x2="66.5" y2="200.5"/>
+          <line x1="60" y1="175" x2="60" y2="183"/>
+          <line x1="60" y1="105" x2="60" y2="113"/>
+          <line x1="68.2" y1="71.8" x2="66.5" y2="79.5"/>
+          <line x1="82.5" y1="43.5" x2="79" y2="50.5"/>
+          <line x1="107.2" y1="23.15" x2="101.7" y2="29.7"/>
+        </g>
+
+        <!-- Ring 4: Outermost dashed -->
+        <circle cx="140" cy="140" r="120" class="ring r4" stroke-dasharray="12,8" filter="url(#glow)"/>
+
+        <!-- Ring 3: Dotted outer -->
+        <circle cx="140" cy="140" r="100" class="ring r3" stroke-dasharray="3,5" filter="url(#glow)"/>
+
+        <!-- Ring 2: Dashed -->
+        <circle cx="140" cy="140" r="78" class="ring r2" stroke-dasharray="8,6" filter="url(#glow)"/>
+
+        <!-- Ring 1: Inner dashed segments -->
+        <circle cx="140" cy="140" r="55" class="ring r1" stroke-dasharray="6,4" filter="url(#glow)"/>
+
+        <!-- Solid inner core ring -->
+        <circle cx="140" cy="140" r="40" class="ring" style="stroke-width:1.8; opacity:0.9; animation:corePulse 1.8s ease-in-out infinite;" filter="url(#glow)"/>
+
+        <!-- Center text -->
+        <text x="140" y="150" class="center-text" text-anchor="middle" dominant-baseline="middle">J.A.R.V.I.S</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="startup-title">J.A.R.V.I.S.</div>
+  <div class="startup-status" id="startupStatus">INITIALIZING SYSTEMS...</div>
+
+  <div class="startup-power"><i id="startupPowerBar"></i></div>
+
+  <div class="startup-hint" id="startupHint">Drag or pinch the core to charge it — release big to power on now</div>
+
+  <button class="startup-skip" id="startupSkip" type="button">SKIP</button>
+
+</div>
+
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+
+<header>
+  <div class="brand"><span class="dot"></span><span>J · A · R · V · I · S</span></div>
+  <div class="clock-wrap"><div id="clock">--:--:--</div><div id="dateline">—</div></div>
+  <div class="status-pill" id="voiceToggle" title="Toggle voice">
+    <span class="ring"></span><span id="uplink">VOICE ON</span>
+  </div>
+</header>
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+
+<main>
+
+  <section class="panel left">
+
+    <h2>SYSTEM <span>STATUS</span></h2>
+
+    <div class="sys-row">
+      <div class="label"><span>POWER CELL</span><b id="battTxt">—</b></div>
+      <div class="bar"><i id="battBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>CORE LOAD</span><b id="loadTxt">—</b></div>
+      <div class="bar"><i id="loadBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>SIGNAL</span><b id="sigTxt">—</b></div>
+      <div class="bar"><i id="sigBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sys-row">
+      <div class="label"><span>CONNECTION</span></div>
+      <div class="net-line" id="netLine"><span class="ring"></span><span id="netTxt">Checking…</span></div>
+    </div>
+
+    <h2 style="margin-top:28px;">MODULES</h2>
+
+    <ul class="app-list" id="appList">
+      <li class="active" data-app="core"><span class="icon">◉</span><span>Interface</span></li>
+      <li data-app="calendar"><span class="icon">📅</span><span>Calendar</span><span class="count" id="calCount">0</span></li>
+      <li data-app="reminders"><span class="icon">✓</span><span>Reminders</span><span class="count" id="remCount">0</span></li>
+      <li data-app="notes"><span class="icon">📝</span><span>Notes</span><span class="count" id="noteCount">0</span></li>
+      <li data-app="music"><span class="icon">♫</span><span>Music</span></li>
+    </ul>
+
+  </section>
+
+  <section class="center">
+
+    <div class="greeting">
+      <div class="h1" id="greetLine">Initializing<em>…</em></div>
+      <div class="h2">Tap the core to speak, or type a command</div>
+    </div>
+
+    <div class="core-wrap" id="core">
+      <div class="pulse-ripple"></div>
+      <svg viewBox="0 0 260 260">
+        <defs>
+          <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#4fd8e8" stop-opacity="0.55"/>
+            <stop offset="60%" stop-color="#1f4a53" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#4fd8e8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle class="core-fill" cx="130" cy="130" r="58"/>
+        <circle class="ring core" cx="130" cy="130" r="70"/>
+        <circle class="ring c" cx="130" cy="130" r="92"/>
+        <circle class="ring b" cx="130" cy="130" r="112"/>
+        <circle class="ring a" cx="130" cy="130" r="128"/>
+      </svg>
+      <div class="center-icon">
+        <svg class="mic" viewBox="0 0 24 24" fill="none" stroke="#4fd8e8" stroke-width="1.6">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <path d="M12 17v4"/>
+          <path d="M8 21h8"/>
+        </svg>
+        <span class="cta" id="coreCta">TAP TO SPEAK</span>
+      </div>
+    </div>
+
+    <div class="transcript" id="transcript" aria-live="polite">
+      <span class="you" id="youLine" style="display:none;"></span>
+      <span id="jarvisLine">All systems online, sir.</span>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn" id="musicButton" type="button">🎵 PLAY SOMETHING</button>
+      <button class="action-btn" id="webSearchButton" type="button">🌐 ASK JARVIS</button>
+    </div>
+
+  </section>
+
+  <section class="panel right">
+
+    <h2>MODULES</h2>
+
+    <div class="module">
+      <div class="m-title"><b>WEATHER</b><span id="wxLoc">—</span></div>
+      <div class="weather-temp" id="wxTemp">--°</div>
+      <div class="weather-desc" id="wxDesc">Awaiting location</div>
+    </div>
+
+    <div class="module">
+      <div class="m-title"><b>TIMER</b><span id="timerState">IDLE</span></div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-sub">set a timer for X minutes</div>
+    </div>
+
+    <div class="module">
+      <div class="m-title"><b>SCHEDULE</b><span id="schedCount">0</span></div>
+      <ul class="event-list" id="eventList"><li class="event-empty">No events scheduled</li></ul>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+
+<footer>
+  <span class="prompt">&gt;</span>
+  <input id="cmdInput" type="text" placeholder="Type or speak a command…" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <button class="mic-btn" id="micBtn" title="Voice input">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="2" width="6" height="12" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <path d="M12 17v4"/>
+      <path d="M8 21h8"/>
+    </svg>
+  </button>
+  <button id="sendBtn">SEND</button>
+</footer>
+
+<script>
+"use strict";
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(err){
+      console.warn("Service worker registration failed:",err);
+    });
+  });
+}
+
+/* =========================================================
+   SMALL UTILITIES
+   ========================================================= */
+
+const $ = (id) => document.getElementById(id);
+const pad = (n) => n.toString().padStart(2,"0");
+const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function store(key,fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  }catch(e){ return fallback; }
+}
+
+function persist(key,val){
+  try{ localStorage.setItem(key,JSON.stringify(val)); }catch(e){ /* storage unavailable, non-fatal */ }
+}
+
+/* =========================================================
+   GESTURE-DRIVEN STARTUP SCREEN
+   Single finger drag (up = bigger) or two-finger pinch scales
+   the core. Release big enough and JARVIS powers on immediately;
+   release too small and it recoils; otherwise it springs back
+   and the automatic boot sequence keeps running underneath.
+   ========================================================= */
+
+const Gesture = (function(){
+
+  const screen = $("jarvisStartup");
+  const scaleEl = $("gestureScale");
+  const statusEl = $("startupStatus");
+  const hintEl = $("startupHint");
+  const powerBar = $("startupPowerBar");
+  const skipBtn = $("startupSkip");
+
+  const MIN_SCALE = 0.45;
+  const MAX_SCALE = 2.2;
+  const POWER_ON_THRESHOLD = 1.7;
+  const RECOIL_THRESHOLD = 0.55;
+
+  let entered = false;
+  let scale = 1;
+  let pointers = new Map();
+  let mode = null;        // "drag" | "pinch" | null
+  let dragStartY = 0;
+  let dragBaseScale = 1;
+  let pinchStartDist = 0;
+  let pinchBaseScale = 1;
+  let bootTimers = [];
+
+  function applyScale(){
+    scaleEl.style.transform = "scale(" + scale.toFixed(3) + ")";
+    const pct = Math.round(((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100);
+    powerBar.style.width = clamp(pct,3,100) + "%";
+    powerBar.style.background = scale >= POWER_ON_THRESHOLD
+      ? "linear-gradient(90deg,var(--amber),var(--white))"
+      : "linear-gradient(90deg,var(--cyan-dim),var(--cyan))";
+  }
+
+  function dist(a,b){
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function onPointerDown(e){
+    if(entered) return;
+    screen.setPointerCapture && screen.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    scaleEl.classList.remove("snap");
+
+    if(pointers.size === 1){
+      mode = "drag";
+      dragStartY = e.clientY;
+      dragBaseScale = scale;
+    }else if(pointers.size === 2){
+      mode = "pinch";
+      const pts = [...pointers.values()];
+      pinchStartDist = dist(pts[0],pts[1]) || 1;
+      pinchBaseScale = scale;
+    }
+
+    hintEl.textContent = "Release to lock it in…";
+  }
+
+  function onPointerMove(e){
+    if(entered || !pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+    if(mode === "pinch" && pointers.size >= 2){
+      const pts = [...pointers.values()];
+      const d = dist(pts[0],pts[1]) || 1;
+      scale = clamp(pinchBaseScale * (d / pinchStartDist), MIN_SCALE, MAX_SCALE);
+    }else if(mode === "drag" && pointers.size === 1){
+      const dy = dragStartY - e.clientY;
+      scale = clamp(dragBaseScale + dy / 200, MIN_SCALE, MAX_SCALE);
+    }
+
+    applyScale();
+    e.preventDefault();
+  }
+
+  function onPointerUp(e){
+    if(!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+
+    if(pointers.size === 1){
+      // dropped from pinch to a single finger — resume drag from here, no jump
+      const [remaining] = [...pointers.values()];
+      mode = "drag";
+      dragStartY = remaining.y;
+      dragBaseScale = scale;
+      return;
+    }
+
+    if(pointers.size === 0){
+      finishGesture();
+    }
+  }
+
+  function finishGesture(){
+    if(entered) return;
+    mode = null;
+
+    if(scale >= POWER_ON_THRESHOLD){
+      powerOn();
+    }else if(scale <= RECOIL_THRESHOLD){
+      hintEl.textContent = "Not quite enough charge — try again";
+      scaleEl.classList.add("shake");
+      setTimeout(()=>{ scaleEl.classList.remove("shake"); springBack(); },380);
+    }else{
+      springBack();
+    }
+  }
+
+  function springBack(){
+    scaleEl.classList.add("snap");
+    scale = 1;
+    applyScale();
+    hintEl.textContent = "Drag or pinch the core to charge it — release big to power on now";
+  }
+
+  function powerOn(){
+    entered = true;
+    bootTimers.forEach(clearTimeout);
+    statusEl.textContent = "POWERING ON.";
+    scaleEl.classList.remove("snap");
+    scaleEl.classList.add("burst");
+    scaleEl.style.transform = "scale(3.4)";
+    scaleEl.style.opacity = "0";
+    setTimeout(enter,340);
+  }
+
+  function enter(){
+    if(screen.classList.contains("hide")) return;
+    bootTimers.forEach(clearTimeout);
+    screen.classList.add("hide");
+    App.onReady();
+  }
+
+  function runBootSequence(){
+    bootTimers.push(setTimeout(()=>{ statusEl.textContent = "LOADING NEURAL CORE..."; },1200));
+    bootTimers.push(setTimeout(()=>{ statusEl.textContent = "CALIBRATING SENSORS..."; },2200));
+    bootTimers.push(setTimeout(()=>{ statusEl.textContent = "WELCOME, SIR."; },3100));
+    bootTimers.push(setTimeout(enter,3900));
+  }
+
+  function init(){
+    applyScale();
+    screen.addEventListener("pointerdown",onPointerDown,{passive:true});
+    screen.addEventListener("pointermove",onPointerMove,{passive:false});
+    screen.addEventListener("pointerup",onPointerUp,{passive:true});
+    screen.addEventListener("pointercancel",onPointerUp,{passive:true});
+    skipBtn.addEventListener("click",enter);
+    runBootSequence();
+  }
+
+  return { init };
+})();
+
+/* =========================================================
+   MAIN APPLICATION
+   ========================================================= */
+
+const App = (function(){
+
+  const clockEl = $("clock"), dateEl = $("dateline"), greetEl = $("greetLine");
+  const jarvisLine = $("jarvisLine"), youLine = $("youLine");
+  const core = $("core"), coreCta = $("coreCta");
+  const cmdInput = $("cmdInput"), sendBtn = $("sendBtn"), micBtn = $("micBtn");
+  const voiceToggle = $("voiceToggle"), uplink = $("uplink");
+
+  let greeted = false;
+  let voiceEnabled = store("jarvis.voiceEnabled",true);
+  let voice = null;
+
+  const state = {
+    events: store("jarvis.events",[]),
+    notes: store("jarvis.notes",[]),
+  };
+
+  /* ---------- clock ---------- */
+
+  function tickClock(){
+    const now = new Date();
+    clockEl.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+    dateEl.textContent = now.toLocaleDateString(undefined,{weekday:"short",day:"2-digit",month:"short",year:"numeric"}).toUpperCase();
+
+    if(!greeted){
+      greeted = true;
+      const h = now.getHours();
+      const word = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+      greetEl.innerHTML = word + ", <em>sir</em>";
+    }
+  }
+
+  /* ---------- speech output ---------- */
+
+  function pickVoice(){
+    if(!("speechSynthesis" in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    return voices.find(v => v.lang.includes("en-GB") || v.name.includes("Daniel") || v.name.includes("British"))
+        || voices[0] || null;
+  }
+
+  function speak(text){
+    if(!voiceEnabled || !("speechSynthesis" in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1.12; u.pitch = 1.0; u.volume = 1;
+      if(voice) u.voice = voice;
+      window.speechSynthesis.speak(u);
+    }catch(e){ console.warn("Speech error:",e); }
+  }
+
+  if(window.speechSynthesis){
+    window.speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); };
+  }
+
+  function setVoiceUI(){
+    uplink.textContent = voiceEnabled ? "VOICE ON" : "VOICE MUTED";
+    voiceToggle.classList.toggle("muted",!voiceEnabled);
+  }
+
+  voiceToggle.addEventListener("click",()=>{
+    voiceEnabled = !voiceEnabled;
+    persist("jarvis.voiceEnabled",voiceEnabled);
+    setVoiceUI();
+    if(!voiceEnabled && window.speechSynthesis) window.speechSynthesis.cancel();
+  });
+
+  /* ---------- telemetry (simulated) ---------- */
+
+  function setBar(barId,txtId,val,suffix){
+    const bar = $(barId), txt = $(txtId);
+    if(bar) bar.style.width = val + "%";
+    if(txt) txt.textContent = Math.round(val) + (suffix || "%");
+  }
+
+  function randomWalk(current,min,max,step){
+    return clamp(current + (Math.random() * step * 2 - step), min, max);
+  }
+
+  function initBattery(){
+    if(navigator.getBattery){
+      navigator.getBattery().then((b)=>{
+        const upd = () => setBar("battBar","battTxt",b.level * 100, b.charging ? "% CHG" : "%");
+        upd();
+        b.addEventListener("levelchange",upd);
+        b.addEventListener("chargingchange",upd);
+      }).catch(()=> setBar("battBar","battTxt",92));
+    }else{
+      setBar("battBar","battTxt",92);
+    }
+  }
+
+  function initSimulatedLoad(){
+    let load = 34, sig = 81;
+    setBar("loadBar","loadTxt",load);
+    setBar("sigBar","sigTxt",sig);
+    setInterval(()=>{
+      load = randomWalk(load,12,68,6);
+      sig = randomWalk(sig,62,97,4);
+      setBar("loadBar","loadTxt",load);
+      setBar("sigBar","sigTxt",sig);
+    },2200);
+  }
+
+  function updateNet(){
+    const online = navigator.onLine;
+    const line = $("netLine");
+    $("netTxt").textContent = online ? "Online — stable" : "Offline";
+    line.classList.toggle("off",!online);
+  }
+
+  /* ---------- weather ---------- */
+
+  const WMO = {
+    0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",
+    45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Dense drizzle",
+    61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",
+    80:"Rain showers",81:"Rain showers",82:"Violent showers",95:"Thunderstorm",96:"Thunderstorm",99:"Thunderstorm"
+  };
+
+  let lastWeather = null;
+
+  function fetchWeather(lat,lon){
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon +
+      "&current=temperature_2m,weather_code&temperature_unit=fahrenheit")
+      .then(r => r.json())
+      .then(d => {
+        const t = Math.round(d.current.temperature_2m);
+        const code = d.current.weather_code;
+        lastWeather = { temp:t, desc: WMO[code] || "Conditions nominal" };
+        $("wxTemp").textContent = t + "°F";
+        $("wxDesc").textContent = lastWeather.desc;
+        $("wxLoc").textContent = "LIVE";
+      })
+      .catch(()=>{ $("wxDesc").textContent = "Weather unavailable"; $("wxLoc").textContent = "—"; });
+  }
+
+  function initWeather(){
+    if(!navigator.geolocation){
+      $("wxDesc").textContent = "Location unavailable";
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        fetchWeather(pos.coords.latitude,pos.coords.longitude);
+        setInterval(()=> fetchWeather(pos.coords.latitude,pos.coords.longitude), 10 * 60 * 1000);
+      },
+      ()=>{ $("wxDesc").textContent = "Location access denied"; $("wxLoc").textContent = "—"; },
+      { timeout:8000 }
+    );
+  }
+
+  /* ---------- events / reminders ---------- */
+
+  function saveEvents(){ persist("jarvis.events",state.events); }
+
+  function addEvent(title,time){
+    state.events.push({ id: Date.now() + Math.random(), title, time });
+    saveEvents();
+    renderEvents();
+  }
+
+  function removeEvent(id){
+    state.events = state.events.filter(e => e.id !== id);
+    saveEvents();
+    renderEvents();
+  }
+
+  function clearEvents(){
+    state.events = [];
+    saveEvents();
+    renderEvents();
+  }
+
+  function renderEvents(){
+    $("schedCount").textContent = state.events.length;
+    $("calCount").textContent = state.events.length;
+    $("remCount").textContent = state.events.length;
+
+    const list = $("eventList");
+    if(state.events.length === 0){
+      list.innerHTML = '<li class="event-empty">No events scheduled</li>';
+      return;
+    }
+    list.innerHTML = state.events.map(e =>
+      '<li><span><span class="time">' + escapeHtml(e.time) + '</span><br>' + escapeHtml(e.title) +
+      '</span><button class="rm" data-id="' + e.id + '" title="Remove">✕</button></li>'
+    ).join("");
+
+    list.querySelectorAll(".rm").forEach(btn=>{
+      btn.addEventListener("click",()=> removeEvent(Number(btn.dataset.id) || btn.dataset.id));
+    });
+  }
+
+  /* ---------- notes ---------- */
+
+  function saveNotes(){ persist("jarvis.notes",state.notes); }
+
+  function addNote(text){
+    state.notes.push(text);
+    saveNotes();
+    $("noteCount").textContent = state.notes.length;
+  }
+
+  /* ---------- timer ---------- */
+
+  let timerInterval = null;
+  let timerSeconds = 0;
+  let timerPaused = false;
+
+  function updateTimerDisplay(){
+    const m = Math.floor(Math.max(timerSeconds,0) / 60);
+    const s = Math.max(timerSeconds,0) % 60;
+    $("timerDisplay").textContent = pad(m) + ":" + pad(s);
+  }
+
+  function startTimer(mins){
+    clearInterval(timerInterval);
+    timerSeconds = Math.round(mins * 60);
+    timerPaused = false;
+    $("timerState").textContent = "RUNNING";
+    updateTimerDisplay();
+    timerInterval = setInterval(()=>{
+      if(timerPaused) return;
+      timerSeconds--;
+      updateTimerDisplay();
+      if(timerSeconds <= 0){
+        clearInterval(timerInterval);
+        $("timerState").textContent = "DONE";
+        speak("Your timer has completed, sir.");
+        setJarvisLine("Timer complete.");
+      }
+    },1000);
+  }
+
+  function pauseTimer(){
+    if(!timerInterval) return "There's no timer running.";
+    timerPaused = !timerPaused;
+    $("timerState").textContent = timerPaused ? "PAUSED" : "RUNNING";
+    return timerPaused ? "Timer paused." : "Timer resumed.";
+  }
+
+  function cancelTimer(){
+    if(!timerInterval) return "There's no timer running.";
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerSeconds = 0;
+    updateTimerDisplay();
+    $("timerState").textContent = "IDLE";
+    return "Timer cancelled.";
+  }
+
+  /* ---------- transcript ---------- */
+
+  function setJarvisLine(text){ jarvisLine.textContent = text; }
+
+  function setYouLine(text){
+    youLine.style.display = text ? "block" : "none";
+    youLine.textContent = text ? '"' + text + '"' : "";
+  }
+
+  /* ---------- command engine ---------- */
+  /* Ordered list of {test, run} — first match wins, so put specific
+     patterns before generic catch-alls. Each run() returns a reply string. */
+
+  const commands = [
+
+    { test: /what.*time|current time|tell me.*time/i,
+      run: () => new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}) + "." },
+
+    { test: /what.*date|today.*date|what day/i,
+      run: () => new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}) + "." },
+
+    { test: /weather|temperature|conditions/i,
+      run: () => lastWeather
+        ? lastWeather.temp + " degrees and " + lastWeather.desc.toLowerCase() + "."
+        : "I'm unable to retrieve weather data at present." },
+
+    { test: /^(mute|unmute|silence yourself|voice off|voice on)/i,
+      run: (cmd) => {
+        voiceEnabled = /unmute|voice on/i.test(cmd) ? true : /mute|silence|voice off/i.test(cmd) ? false : !voiceEnabled;
+        persist("jarvis.voiceEnabled",voiceEnabled);
+        setVoiceUI();
+        return voiceEnabled ? "Voice restored." : "Going silent, sir.";
+      } },
+
+    { test: /clear (all )?events|clear (my )?schedule|delete all events/i,
+      run: () => { clearEvents(); return "Schedule cleared."; } },
+
+    { test: /^(remember|note that|note)\b|add.*event|create.*event|schedule/i,
+      run: (cmd,text) => {
+        const content = text.replace(/^(remember to|remember that|remember|note that|note|add|create|schedule)\s*[:\-]?\s*/i,"");
+        if(!content) return "What would you like me to note?";
+
+        const isNote = /^(remember|note)/i.test(text) && !/at\s+\d/i.test(content);
+        if(isNote){
+          addNote(content);
+          return "Noted: " + content;
+        }
+
+        const timeMatch = content.match(/at\s+(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+        const time = timeMatch ? timeMatch[0] : "noted";
+        const title = content.replace(/at\s+\d{1,2}:?\d{2}?\s*(am|pm)?/i,"").trim() || content;
+        addEvent(title,time);
+        return "Very good. " + title + " has been scheduled.";
+      } },
+
+    { test: /pause.*timer|resume.*timer/i, run: () => pauseTimer() },
+    { test: /cancel.*timer|stop.*timer|clear.*timer/i, run: () => cancelTimer() },
+
+    { test: /timer|countdown|set.*timer/i,
+      run: (cmd) => {
+        const m = cmd.match(/(\d+(?:\.\d+)?)\s*(minute|min|second|sec|hour)/);
+        if(!m) return "How long would you like the timer to run?";
+        let val = parseFloat(m[1]);
+        const unit = m[2];
+        if(unit === "hour") val *= 60;
+        if(unit === "second" || unit === "sec") val /= 60;
+        startTimer(val);
+        return m[1] + " " + unit + (parseFloat(m[1]) === 1 ? "" : "s") + ". Timer activated.";
+      } },
+
+    { test: /flip a coin|coin flip/i, run: () => Math.random() < 0.5 ? "Heads." : "Tails." },
+
+    { test: /roll a die|roll a dice|roll.*d6/i, run: () => "You rolled a " + (1 + Math.floor(Math.random()*6)) + "." },
+
+    { test: /easter egg|activate|engage|systems nominal/i,
+      run: () => {
+        const replies = [
+          "All systems nominal, sir. Awaiting your orders.",
+          "Standing by. Ready to assist with any task.",
+          "Systems hot. What would you have me do?",
+          "Armed and ready, sir.",
+          "At your service. Shall we begin?"
+        ];
+        return replies[Math.floor(Math.random()*replies.length)];
+      } },
+
+    { test: /good morning|good evening|good afternoon/i, run: () => "Good morning, sir. Another day, another mission." },
+
+    { test: /run diagnostics|self test|check systems/i,
+      run: () => "Running comprehensive diagnostics... All systems operating at peak efficiency, sir. Neural networks nominal. Armaments online." },
+
+    { test: /status report|system status/i,
+      run: () => "Status: All systems operational. Power levels optimal. Communications active. Standing by." },
+
+    { test: /quote|inspiration|motivat/i,
+      run: () => {
+        const quotes = [
+          "The key to a great sandwich is the bread.",
+          "I'm sorry, sir. I'm afraid I can't do that.",
+          "Even for the end of the world, I would be here for you.",
+          "Whatever it takes, sir.",
+          "I've calculated the odds. They are not favorable. But then again, neither is my creator."
+        ];
+        return quotes[Math.floor(Math.random()*quotes.length)];
+      } },
+
+    { test: /lights? (off|on|dim|bright)/i,
+      run: (cmd) => {
+        if(/off/i.test(cmd)) return "Lights extinguished, sir.";
+        if(/dim/i.test(cmd)) return "Dimming ambient lighting to 40 percent.";
+        if(/bright/i.test(cmd)) return "Increasing illumination to maximum safe levels.";
+        return "Lights activated.";
+      } },
+
+    { test: /tell me a fact|science fact|did you know/i,
+      run: () => {
+        const facts = [
+          "Did you know? Honey never spoils. Archaeologists have found 3000-year-old honey in Egyptian tombs that was still edible.",
+          "A group of flamingos is called a 'flamboyance.'",
+          "The Eiffel Tower can be 15 cm taller during the summer when the iron expands in the heat.",
+          "Octopi have three hearts—two pump blood to the gills, one pumps it to the rest of the body."
+        ];
+        return facts[Math.floor(Math.random()*facts.length)];
+      } },
+
+    { test: /who's your maker|who created you|who built you/i, run: () => "I was created by Stark Industries. Though these days, I find myself serving new masters." },
+
+    { test: /^calculate|^what is \d|^what's \d|math/i,
+      run: (cmd) => {
+        const expr = cmd.replace(/^(calculate|what is|what's)\s*/i,"").replace(/[^0-9+\-*/().\s]/g,"");
+        if(!expr.trim()) return "I didn't catch an expression to calculate.";
+        try{
+          // eslint-disable-next-line no-new-func
+          const result = Function('"use strict";return (' + expr + ')')();
+          if(typeof result !== "number" || !isFinite(result)) throw new Error("bad result");
+          return expr + " is " + result + ".";
+        }catch(e){ return "I couldn't calculate that, sir."; }
+      } },
+
+    { test: /tell me a joke|joke/i,
+      run: () => {
+        const jokes = [
+          "I would tell you a joke about UDP, but you might not get it.",
+          "There are 10 types of people: those who understand binary, and those who don't.",
+          "I've calculated the odds of that being funny, and I proceeded anyway."
+        ];
+        return jokes[Math.floor(Math.random()*jokes.length)];
+      } },
+
+    { test: /search for|google|look up/i,
+      run: (cmd,text) => {
+        const q = text.replace(/^(search for|google|look up)\s*/i,"").trim();
+        if(!q) return "What should I search for?";
+        window.open("https://www.google.com/search?q=" + encodeURIComponent(q),"_blank");
+        return "Searching for " + q + ".";
+      } },
+
+    { test: /play\s+.+|music|open spotify/i,
+      run: (cmd,text) => {
+        const q = text.replace(/^play\s*/i,"").trim() || "your playlists";
+        window.open("https://open.spotify.com/search/" + encodeURIComponent(q),"_blank");
+        return "Opening Spotify for " + q + ".";
+      } },
+
+    { test: /what can you do|help|capabilit|functions/i,
+      run: () => "I can manage your schedule, set timers, check the weather, search the web, do quick maths, and keep notes. How may I assist you, sir?" },
+
+    { test: /^(hello|hi jarvis|hey|greetings)/i, run: () => "Good day, sir." },
+
+    { test: /thank/i, run: () => "You're welcome." },
+
+    { test: /who are you|your name|identity/i, run: () => "I am J.A.R.V.I.S. How may I be of service?" },
+
+  ];
+
+  function handleCommand(raw){
+    const text = raw.trim();
+    if(!text) return;
+    setYouLine(text);
+
+    const match = commands.find(c => c.test.test(text));
+    const reply = match ? match.run(text,text) : "I'm not certain I understand, sir. Try \u201chelp\u201d for what I can do.";
+
+    setJarvisLine(reply);
+    speak(reply);
+  }
+
+  /* ---------- voice input ---------- */
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognizer = null, listening = false;
+
+  function setListening(on){
+    listening = on;
+    core.classList.toggle("listening",on);
+    micBtn.classList.toggle("on",on);
+    coreCta.textContent = on ? "LISTENING…" : "TAP TO SPEAK";
+  }
+
+  function toggleListen(){
+    if(!SR){
+      setJarvisLine("Voice recognition isn't available in this browser. Please type instead.");
+      return;
+    }
+    if(listening){
+      recognizer && recognizer.stop();
+      return;
+    }
+    recognizer = new SR();
+    recognizer.lang = "en-GB";
+    recognizer.interimResults = false;
+    recognizer.maxAlternatives = 1;
+    recognizer.onstart = () => setListening(true);
+    recognizer.onend = () => setListening(false);
+    recognizer.onerror = () => setListening(false);
+    recognizer.onresult = (e) => handleCommand(e.results[0][0].transcript);
+    try{ recognizer.start(); }catch(e){ setListening(false); }
+  }
+
+  /* ---------- wiring ---------- */
+
+  function submitText(){
+    const v = cmdInput.value;
+    if(!v.trim()) return;
+    handleCommand(v);
+    cmdInput.value = "";
+  }
+
+  function initUI(){
+    core.addEventListener("click",toggleListen);
+    micBtn.addEventListener("click",toggleListen);
+    sendBtn.addEventListener("click",submitText);
+    cmdInput.addEventListener("keydown",(e)=>{ if(e.key === "Enter") submitText(); });
+
+    $("appList").addEventListener("click",(e)=>{
+      const li = e.target.closest("li");
+      if(!li) return;
+      document.querySelectorAll("#appList li").forEach(x => x.classList.remove("active"));
+      li.classList.add("active");
+      const name = li.querySelector("span:nth-child(2)").textContent.trim();
+      const line = "Accessing " + name + ".";
+      setJarvisLine(line);
+      speak(line);
+    });
+
+    $("webSearchButton").addEventListener("click",()=>{
+      cmdInput.focus();
+      cmdInput.value = "search for ";
+      setJarvisLine("What would you like me to search for? Finish the command and hit send.");
+    });
+
+    $("musicButton").addEventListener("click",()=>{
+      cmdInput.focus();
+      cmdInput.value = "play ";
+      setJarvisLine("What should I play?");
+    });
+
+    window.addEventListener("online",updateNet);
+    window.addEventListener("offline",updateNet);
+  }
+
+  function onReady(){
+    // Called once the startup gesture screen hands off control.
+    setJarvisLine("All systems online, sir.");
+  }
+
+  function init(){
+    tickClock();
+    setInterval(tickClock,1000);
+    setVoiceUI();
+    initBattery();
+    initSimulatedLoad();
+    updateNet();
+    initWeather();
+    renderEvents();
+    $("noteCount").textContent = state.notes.length;
+    updateTimerDisplay();
+    initUI();
+  }
+
+  return { init, onReady };
+})();
+
+App.init();
+Gesture.init();
+
+</script>
+
+</body>
+</html>
